@@ -1,0 +1,7 @@
+flask==2.3.3
+pymongo==4.6.1
+requests==2.31.0
+sounddevice==0.4.6
+numpy==1.26.0
+wave==0.0.2
+python-dotenv==1.0.0

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiries - Loan Buddy</title>
+    <link rel="stylesheet" href="/inquiry.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <base href="/">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">Loan Buddy</div>
+        <ul class="nav-links">
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/language.html">Chat with AI</a></li>
+            <li><a href="/inquiry.html">Inquiries</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="container">
+            <h1 class="fade-in">Your Inquiries</h1>
+            <div id="loading" class="loading-spinner" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+            <div id="inquiries-list" class="inquiries-list"></div>
+        </div>
+    </main>
+    <script>
+        (function() {
+            const userId = 'user123';
+            const inquiriesList = document.getElementById('inquiries-list');
+            const loadingSpinner = document.getElementById('loading');
+
+            async function loadInquiries() {
+                loadingSpinner.style.display = 'flex';
+                const response = await fetch(`http://localhost:5000/api/chats/${userId}`);
+                const chats = await response.json();
+                inquiriesList.innerHTML = '';
+
+                chats.forEach(chat => {
+                    chat.messages.forEach((msg, index) => {
+                        if (msg.sender === 'user') {
+                            const inquiryDiv = document.createElement('div');
+                            inquiryDiv.className = 'inquiry';
+                            inquiryDiv.innerHTML = `
+                                <h3>Question ${index + 1} (${chat.language})</h3>
+                                <p>${msg.content}</p>
+                                <p><strong>Answer:</strong> ${chat.messages[index + 1]?.content || 'No response yet'}</p>
+                                <button class="btn btn-primary play-btn" data-chat-id="${chat._id}" data-index="${index}">Play Audio</button>
+                            `;
+                            inquiriesList.appendChild(inquiryDiv);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.play-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const chatId = e.target.dataset.chatId;
+                        const index = e.target.dataset.index;
+                        loadingSpinner.style.display = 'flex';
+                        e.target.disabled = true;
+
+                        const response = await fetch('http://localhost:5000/api/ask', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                question: chats.find(c => c._id === chatId).messages[index].content,
+                                chatId
+                            })
+                        });
+                        const { audio } = await response.json();
+
+                        if (audio) {
+                            const audioBytes = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
+                            const blob = new Blob([audioBytes], { type: 'audio/wav' });
+                            const audioUrl = URL.createObjectURL(blob);
+                            const audioElement = new Audio(audioUrl);
+                            audioElement.play();
+                        }
+
+                        loadingSpinner.style.display = 'none';
+                        e.target.disabled = false;
+                    });
+                });
+
+                loadingSpinner.style.display = 'none';
+            }
+
+            loadInquiries();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Ask Questions - Loan Buddy</title>
+    <link rel="stylesheet" href="/ask.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <base href="/">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">Loan Buddy</div>
+        <ul class="nav-links">
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/language.html">Language</a></li>
+            <li><a href="/inquiry.html">Inquiries</a></li>
+        </ul>
+        <div class="search-bar">
+            <input type="text" placeholder="Search ..." class="search-input">
+        </div>
+    </nav>
+    <main class="content">
+        <div class="container">
+            <h1 class="fade-in">How to Ask Questions?</h1>
+            <div class="chat-interface">
+                <div class="chat-history">
+                    <h2>Chat History</h2>
+                    <ul id="chat-list" class="chat-list"></ul>
+                    <button id="new-chat-btn" class="btn btn-secondary">New Chat</button>
+                </div>
+                <div class="chat-box">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div id="loading" class="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+                    <div class="question-form">
+                        <input type="text" id="question-input" placeholder="Type your question..." class="question-input">
+                        <button id="submit-btn" class="btn btn-primary">Submit</button>
+                    </div>
+                    <div class="mic-section">
+                        <button id="mic-btn" class="btn btn-mic">🎙️</button>
+                        <p id="mic-status" class="mic-status">Tap to speak</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="visly-footer">
+        <p>Made with <span class="visly">Visly</span></p>
+    </footer>
+    <script>
+        (function() {
+            const userId = 'user123';
+            let currentChatId = localStorage.getItem('currentChatId');
+            const selectedLanguage = localStorage.getItem('selectedLanguage') || 'en-IN';
+
+            const chatList = document.getElementById('chat-list');
+            const chatMessages = document.getElementById('chat-messages');
+            const questionInput = document.getElementById('question-input');
+            const submitBtn = document.getElementById('submit-btn');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const micBtn = document.getElementById('mic-btn');
+            const micStatus = document.getElementById('mic-status');
+            const loadingSpinner = document.getElementById('loading');
+
+            async function loadChatHistory() {
+                const response = await fetch(`http://localhost:5000/api/chats/${userId}`);
+                const chats = await response.json();
+                chatList.innerHTML = '';
+                chats.forEach(chat => {
+                    const li = document.createElement('li');
+                    li.textContent = `Chat ${new Date(chat.createdAt).toLocaleString()} (${chat.language})`;
+                    li.dataset.chatId = chat._id;
+                    li.addEventListener('click', () => loadChat(chat._id));
+                    chatList.appendChild(li);
+                });
+                if (!currentChatId && chats.length > 0) loadChat(chats[0]._id);
+                else if (currentChatId) loadChat(currentChatId);
+            }
+
+            async function loadChat(chatId) {
+                currentChatId = chatId;
+                localStorage.setItem('currentChatId', chatId);
+                const response = await fetch(`http://localhost:5000/api/chats/${userId}`);
+                const chats = await response.json();
+                const chat = chats.find(c => c._id === chatId);
+                chatMessages.innerHTML = '';
+                chat.messages.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = msg.sender === 'user' ? 'message user-message' : 'message bot-message';
+                    div.textContent = msg.content;
+                    chatMessages.appendChild(div);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            async function showLoading() {
+                loadingSpinner.style.display = 'flex';
+                submitBtn.disabled = true;
+                micBtn.disabled = true;
+            }
+
+            async function hideLoading() {
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+                micBtn.disabled = false;
+            }
+
+            newChatBtn.addEventListener('click', () => {
+                window.location.href = '/language.html';
+            });
+
+            submitBtn.addEventListener('click', async () => {
+                const question = questionInput.value.trim();
+                if (!question || !currentChatId) return;
+
+                showLoading();
+                await fetch(`http://localhost:5000/api/chats/${currentChatId}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'user', content: question })
+                });
+
+                const aiResponse = await fetch('http://localhost:5000/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, chatId: currentChatId, generate_audio: false })
+                });
+                const { answer } = await aiResponse.json();
+
+                await fetch(`http://localhost:5000/api/chats/${currentChatId}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'bot', content: answer })
+                });
+
+                questionInput.value = '';
+                hideLoading();
+                loadChat(currentChatId);
+            });
+
+            micBtn.addEventListener('click', async () => {
+                if (!currentChatId) {
+                    alert("Please start a new chat first!");
+                    return;
+                }
+
+                micStatus.textContent = "Speak now...";
+                micBtn.disabled = true;
+                showLoading();
+
+                const response = await fetch('http://localhost:5000/api/record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chatId: currentChatId })
+                });
+
+                micStatus.textContent = "Processing...";
+                micStatus.classList.add('processing');
+
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                    micStatus.textContent = "Tap to speak";
+                    micStatus.classList.remove('processing');
+                    hideLoading();
+                    return;
+                }
+
+                await fetch(`http://localhost:5000/api/chats/${currentChatId}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'user', content: data.transcript })
+                });
+
+                await fetch(`http://localhost:5000/api/chats/${currentChatId}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'bot', content: data.answer })
+                });
+
+                if (data.audio) {
+                    const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+                    const blob = new Blob([audioBytes], { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(blob);
+                    const audioElement = new Audio(audioUrl);
+                    audioElement.play();
+                }
+
+                micStatus.textContent = "Tap to speak";
+                micStatus.classList.remove('processing');
+                hideLoading();
+                loadChat(currentChatId);
+            });
+
+            loadChatHistory();
+        })();
+    </script>
+</body>
+</html>
