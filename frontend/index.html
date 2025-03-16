@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Buddy</title>
+    <link rel="stylesheet" href="/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <base href="/">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">Loan Buddy</div>
+        <ul class="nav-links">
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/language.html">Chat with AI</a></li>
+            <li><a href="/inquiry.html">Inquiries</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <section class="features fade-in">
+            <h2>Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <div class="feature-icon">🏦</div>
+                    <h3>Instant Loan Assistance</h3>
+                    <p>Get personalized loan guidance & support without the hassle of human intervention.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Multilingual Support</h3>
+                    <p>Access loan information & assistance in multiple languages for global user reach.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📱</div>
+                    <h3>User-Friendly Interface</h3>
+                    <p>Navigate effortlessly through a comprehensive design tailored for seamless experiences.</p>
+                </div>
+            </div>
+        </section>
+        <section class="cta fade-in">
+            <h2>Start Your Loan Journey</h2>
+            <p>Unlock the financial flexibility you need. Begin your loan journey with Loan Buddy today!</p>
+            <button class="btn btn-primary" id="start-btn">Start Now</button>
+        </section>
+    </main>
+    <script>
+        (function() {
+            const startBtn = document.getElementById('start-btn');
+            startBtn.addEventListener('click', () => {
+                window.location.href = '/language.html';
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Selection - Loan Buddy</title>
+    <link rel="stylesheet" href="/language.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <base href="/">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">Loan Buddy</div>
+        <ul class="nav-links">
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/language.html">Chat with AI</a></li>
+            <li><a href="/inquiry.html">Inquiries</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="container">
+            <h1 class="fade-in">Select Language</h1>
+            <div id="loading" class="loading-spinner" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+            <div class="language-grid">
+                <div class="language-option" data-lang="english">
+                    <h3>English</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="hindi">
+                    <h3>Hindi</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="bn-IN">
+                    <h3>Bengali</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="gu-IN">
+                    <h3>Gujarati</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="kn-IN">
+                    <h3>Kannada</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="ml-IN">
+                    <h3>Malayalam</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="mr-IN">
+                    <h3>Marathi</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="od-IN">
+                    <h3>Odia</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="pa-IN">
+                    <h3>Punjabi</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="ta-IN">
+                    <h3>Tamil</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+                <div class="language-option" data-lang="te-IN">
+                    <h3>Telugu</h3>
+                    <button class="btn btn-primary confirm-btn">Select</button>
+                </div>
+            </div>
+            <button class="btn btn-success final-confirm-btn" id="final-confirm-btn" style="display: none;">Confirm</button>
+        </div>
+    </main>
+    <script>
+        (function() {
+            const userId = 'user123';
+            let selectedLanguage = null;
+            const confirmButtons = document.querySelectorAll('.confirm-btn');
+            const finalConfirmBtn = document.getElementById('final-confirm-btn');
+            const loadingSpinner = document.getElementById('loading');
+
+            confirmButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    selectedLanguage = e.target.parentElement.dataset.lang;
+                    confirmButtons.forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    finalConfirmBtn.style.display = 'block';
+                });
+            });
+
+            finalConfirmBtn.addEventListener('click', async () => {
+                if (!selectedLanguage) return;
+                loadingSpinner.style.display = 'flex';
+                finalConfirmBtn.disabled = true;
+
+                const response = await fetch('http://localhost:5000/api/chats/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, language: selectedLanguage })
+                });
+                const chat = await response.json();
+                localStorage.setItem('currentChatId', chat._id);
+
+                loadingSpinner.style.display = 'none';
+                finalConfirmBtn.disabled = false;
+                window.location.href = '/ask.html';
+            });
+        })();
+    </script>
+</body>
+</html>
